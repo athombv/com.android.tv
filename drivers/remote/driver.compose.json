@@ -1,15 +1,6 @@
 {
   "name": {
-    "en": "Remote",
-    "nl": "Afstandsbediening",
-    "de": "Fernbedienung",
-    "fr": "Télécommande",
-    "it": "Telecomando",
-    "sv": "Fjärrkontroll",
-    "no": "Fjernkontroll",
-    "es": "Control remoto",
-    "da": "Fjernbetjening",
-    "pl": "Pilot zdalnego sterowania"
+    "en": "Android TV"
   },
   "connectivity": ["lan"],
   "pair": [
@@ -128,6 +119,7 @@
     }
   ],
   "images": {
+    "xlarge": "{{driverAssetsPath}}/images/xlarge.png",
     "large": "{{driverAssetsPath}}/images/large.png",
     "small": "{{driverAssetsPath}}/images/small.png"
   },
@@ -159,6 +151,17 @@
     "key_watch_tv",
     "key_channel_up",
     "key_channel_down",
-    "key_source"
+    "key_source",
+    "key_digit_0",
+    "key_digit_1",
+    "key_digit_2",
+    "key_digit_3",
+    "key_digit_4",
+    "key_digit_5",
+    "key_digit_6",
+    "key_digit_7",
+    "key_digit_8",
+    "key_digit_9",
+    "current_application"
   ]
 }

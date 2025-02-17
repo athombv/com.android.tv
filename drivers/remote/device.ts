@@ -1,11 +1,9 @@
 import {Remote} from "../../remote";
 import {DeviceSettings, DeviceStore, SettingsInput} from "./types";
-import AndroidTVRemoteClient, {Input, Volume} from "./client";
+import AndroidTVRemoteClient, {Digit, Input, Volume} from "./client";
 import RemoteMessage from "../../androidtv-remote/remote/RemoteMessage";
+import Homey from "homey";
 
-/**
- * @property {RemoteDriver} driver
- */
 class RemoteDevice extends Remote {
   private client?: AndroidTVRemoteClient;
   private keyCapabilities: Array<string> = [
@@ -34,16 +32,16 @@ class RemoteDevice extends Remote {
     'key_channel_up',
     'key_channel_down',
     // 'key_info',
-    // 'key_digit_1',
-    // 'key_digit_2',
-    // 'key_digit_3',
-    // 'key_digit_4',
-    // 'key_digit_5',
-    // 'key_digit_6',
-    // 'key_digit_7',
-    // 'key_digit_8',
-    // 'key_digit_9',
-    // 'key_digit_0',
+    'key_digit_1',
+    'key_digit_2',
+    'key_digit_3',
+    'key_digit_4',
+    'key_digit_5',
+    'key_digit_6',
+    'key_digit_7',
+    'key_digit_8',
+    'key_digit_9',
+    'key_digit_0',
     // 'key_dot',
     'key_options',
     'key_back',
@@ -63,7 +61,11 @@ class RemoteDevice extends Remote {
 
       this.client = new AndroidTVRemoteClient(
           settings.ip,
-          store.cert
+          store.cert,
+          'androidtv-remote',
+          6467,
+          6466,
+          Homey.env.DEBUG === '1',
       );
 
       this.client.on('error', async (error) => {
@@ -77,7 +79,11 @@ class RemoteDevice extends Remote {
         this.setAvailable();
       })
       this.client.on('close', ({hasError, error}) => {
-        this.log("Client has been closed")
+        if (hasError) {
+          this.log("Client has been closed with error", error);
+        } else {
+          this.log("Client has been closed")
+        }
         this.setUnavailable();
       })
 
@@ -110,20 +116,19 @@ class RemoteDevice extends Remote {
       this.log('volume', volume);
       this.log("Volume : " + volume.level + '/' + volume.maximum + " | Muted : " + volume.muted);
 
-      // await this.setCapabilityValue('volume_mute', volume.muted);
-      // await this.setCapabilityValue('volume', volume.level);
       await this.setCapabilityValue('volume_mute', volume.muted);
       await this.setCapabilityValue('measure_volume', Math.round(volume.level / (volume.maximum / 100)));
     });
 
     this.client.on('current_app', (current_app) => {
-      // @ts-ignore
-      return this.driver.triggerApplicationOpenedTrigger(this, {
-        app: current_app
-      }).catch(this.error)
+      this.setCapabilityValue('current_application', current_app);
+      return this.homey.flow.getDeviceTriggerCard('application_opened').trigger(this, {
+        app: current_app,
+      }).catch(this.error);
     });
 
     this.client.on('unpaired', async (error: RemoteMessage | undefined): Promise<void> => {
+      this.error('unpaired', error);
       await this.setUnavailable(this.homey.__('error.unpaired'));
     });
 
@@ -149,15 +154,15 @@ class RemoteDevice extends Remote {
       return this.onCapabilityOnOffSet(value)
     })
 
-    this.registerCapabilityListener('volume_up', value => {
+    this.registerCapabilityListener('volume_up', () => {
       return this.client?.volumeUp();
     })
 
-    this.registerCapabilityListener('volume_down', value => {
+    this.registerCapabilityListener('volume_down', () => {
       return this.client?.volumeDown();
     })
 
-    this.registerCapabilityListener('volume_mute', value => {
+    this.registerCapabilityListener('volume_mute', () => {
       return this.client?.mute();
     })
 
@@ -223,32 +228,31 @@ class RemoteDevice extends Remote {
       return this.client?.sendKeyDpadRight();
     } else if (typeof capability.key_cursor_down !== 'undefined') {
       return this.client?.sendKeyDpadDown();
+    } else if (typeof capability.key_digit_0 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit0)
+    } else if (typeof capability.key_digit_1 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit1)
+    } else if (typeof capability.key_digit_2 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit2)
+    } else if (typeof capability.key_digit_3 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit3)
+    } else if (typeof capability.key_digit_4 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit4)
+    } else if (typeof capability.key_digit_5 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit5)
+    } else if (typeof capability.key_digit_6 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit6)
+    } else if (typeof capability.key_digit_7 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit7)
+    } else if (typeof capability.key_digit_8 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit8)
+    } else if (typeof capability.key_digit_9 !== 'undefined') {
+        return this.client?.sendKeyDigit(Digit.Digit9)
     }
         // else if (typeof capability.key_info !== 'undefined') {
         //     return this.sendKey('Info')
-        // } else if (typeof capability.key_digit_0 !== 'undefined') {
-        //     return this.sendKey('Digit0')
-        // } else if (typeof capability.key_digit_1 !== 'undefined') {
-        //     return this.sendKey('Digit1')
-        // } else if (typeof capability.key_digit_2 !== 'undefined') {
-        //     return this.sendKey('Digit2')
-        // } else if (typeof capability.key_digit_3 !== 'undefined') {
-        //     return this.sendKey('Digit3')
-        // } else if (typeof capability.key_digit_4 !== 'undefined') {
-        //     return this.sendKey('Digit4')
-        // } else if (typeof capability.key_digit_5 !== 'undefined') {
-        //     return this.sendKey('Digit5')
-        // } else if (typeof capability.key_digit_6 !== 'undefined') {
-        //     return this.sendKey('Digit6')
-        // } else if (typeof capability.key_digit_7 !== 'undefined') {
-        //     return this.sendKey('Digit7')
-        // } else if (typeof capability.key_digit_8 !== 'undefined') {
-        //     return this.sendKey('Digit8')
-        // } else if (typeof capability.key_digit_9 !== 'undefined') {
-        //     return this.sendKey('Digit9')
         // } else if (typeof capability.key_dot !== 'undefined') {
         //     return this.sendKey('Dot')
-    // }
     else if (typeof capability.key_options !== 'undefined') {
       return this.client?.sendKeyMenu();
     } else if (typeof capability.key_back !== 'undefined') {
@@ -387,10 +391,35 @@ class RemoteDevice extends Remote {
       this.client?.sendKeyBack(direction);
     } else if (key === 'key_home') {
       this.client?.sendKeyHome(direction);
+    } else if(key === 'key_digit_0') {
+      this.client?.sendKeyDigit(Digit.Digit0, direction);
+    } else if(key === 'key_digit_1') {
+      this.client?.sendKeyDigit(Digit.Digit1, direction);
+    } else if(key === 'key_digit_2') {
+      this.client?.sendKeyDigit(Digit.Digit2, direction);
+    } else if(key === 'key_digit_3') {
+      this.client?.sendKeyDigit(Digit.Digit3, direction);
+    } else if(key === 'key_digit_4') {
+      this.client?.sendKeyDigit(Digit.Digit4, direction);
+    } else if(key === 'key_digit_5') {
+      this.client?.sendKeyDigit(Digit.Digit5, direction);
+    } else if(key === 'key_digit_6') {
+      this.client?.sendKeyDigit(Digit.Digit6, direction);
+    } else if(key === 'key_digit_7') {
+      this.client?.sendKeyDigit(Digit.Digit7, direction);
+    } else if(key === 'key_digit_8') {
+      this.client?.sendKeyDigit(Digit.Digit8, direction);
+    } else if(key === 'key_digit_9') {
+      this.client?.sendKeyDigit(Digit.Digit9, direction);
     }
   }
 
-  public async openApplication(appLink: string): Promise<void> {
+  public async openApplicationOrLink(appLink: string): Promise<void> {
+    try {
+      new URL(appLink);
+    } catch (e) {
+      appLink = 'market://launch?id=' + appLink;
+    }
     this.client?.openApplication(appLink);
   }
 
@@ -496,6 +525,46 @@ class RemoteDevice extends Remote {
         key: 'key_home',
         name: this.homey.__(`key.home`)
       },
+      {
+        key: 'key_digit_0',
+        name: this.homey.__(`key.digit_0`)
+      },
+      {
+        key: 'key_digit_1',
+        name: this.homey.__(`key.digit_1`)
+      },
+      {
+        key: 'key_digit_2',
+        name: this.homey.__(`key.digit_2`)
+      },
+      {
+        key: 'key_digit_3',
+        name: this.homey.__(`key.digit_3`)
+      },
+      {
+        key: 'key_digit_4',
+        name: this.homey.__(`key.digit_4`)
+      },
+      {
+        key: 'key_digit_5',
+        name: this.homey.__(`key.digit_5`)
+      },
+      {
+        key: 'key_digit_6',
+        name: this.homey.__(`key.digit_6`)
+      },
+      {
+        key: 'key_digit_7',
+        name: this.homey.__(`key.digit_7`)
+      },
+      {
+        key: 'key_digit_8',
+        name: this.homey.__(`key.digit_8`)
+      },
+      {
+        key: 'key_digit_9',
+        name: this.homey.__(`key.digit_9`)
+      }
     ];
   }
 }
